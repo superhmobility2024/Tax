@@ -1,0 +1,68 @@
+name: Build NEMESIS Taximeter Package
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install API 19 & Build Tools
+        run: sdkmanager "platforms;android-19" "build-tools;29.0.3"
+      - name: Compile and Package
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/29.0.3"
+          PLATFORM_JAR="$ANDROID_HOME/platforms/android-19/android.jar"
+          mkdir -p build/gen build/obj build/apk out/packages
+
+          "$BUILD_TOOLS/aapt" package -f -m \
+            -J build/gen \
+            -M app/src/main/AndroidManifest.xml \
+            -A app/src/main/assets \
+            -I "$PLATFORM_JAR" \
+            -F build/apk/unsigned.apk
+
+          javac -source 1.7 -target 1.7 -classpath "$PLATFORM_JAR" -d build/obj \
+            app/src/main/java/kr/custom/taximeter/MainActivity.java
+
+          "$BUILD_TOOLS/dx" --dex --output=build/apk/classes.dex build/obj
+          (cd build/apk && "$BUILD_TOOLS/aapt" add unsigned.apk classes.dex)
+
+          keytool -genkeypair -v -keystore debug.keystore -storepass android \
+            -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+            -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
+          "$BUILD_TOOLS/apksigner" sign --ks debug.keystore --ks-pass pass:android \
+            --v1-signing-enabled true --v2-signing-enabled false \
+            --out build/Taximeter.apk build/apk/unsigned.apk
+
+          cat << 'EOF' > build/NEMESIS.data
+          [nemesis]
+          version=1.1
+          id=kr.taximeter
+          name=Korea Digital Taximeter
+          type=app
+          package-version=1.0.0
+          short-desc=서울·세종 도트 매트릭스 택시 미터기
+          os=S5W_M*
+          models=*
+          app=Taximeter.apk
+          EOF
+
+          (cd build && zip -r ../out/packages/kr.taximeter.zip NEMESIS.data Taximeter.apk)
+
+          cat << 'EOF' > out/NEMESIS.data
+          [nemesis]
+          version=1.1
+          type=install
+          path=packages/kr.taximeter.zip
+          EOF
+      - name: Upload USB Ready Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: usb-taximeter-bundle
+          path: out/
