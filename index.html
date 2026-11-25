@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KOREA DIGITAL TAXIMETER - Gen5W</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background-color: #090b0e;
+    color: #e2e8f0;
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    display: table;
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+  }
+  /* 상단 상태 바 */
+  #topbar {
+    display: table-row;
+    height: 44px;
+    background-color: #11151c;
+    border-bottom: 1px solid #232a35;
+  }
+  #topbar-inner {
+    display: table-cell;
+    vertical-align: middle;
+    padding: 0 18px;
+  }
+  .brand-title {
+    float: left;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #f8fafc;
+  }
+  .brand-slash {
+    color: #ef4444;
+    margin-right: 4px;
+  }
+  .brand-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 12px;
+    font-weight: normal;
+  }
+  .top-right {
+    float: right;
+    font-size: 14px;
+    color: #cbd5e1;
+  }
+  .top-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: #1e293b;
+    color: #38bdf8;
+    margin-right: 10px;
+  }
+  .top-clock {
+    font-weight: bold;
+    font-size: 16px;
+    color: #f8fafc;
+  }
+
+  /* 메인 영역 */
+  #main-row {
+    display: table-row;
+  }
+  #main-cell {
+    display: table-cell;
+    vertical-align: top;
+  }
+  #workspace {
+    display: table;
+    width: 100%;
+    height: 100%;
+  }
+  #left-panel {
+    display: table-cell;
+    width: 67%;
+    vertical-align: middle;
+    padding: 12px 20px;
+    border-right: 1px solid #1e242d;
+    background-color: #0c0f14;
+  }
+  #right-panel {
+    display: table-cell;
+    width: 33%;
+    vertical-align: top;
+    padding: 12px 16px;
+    background-color: #090b0e;
+  }
+
+  /* 미터기 상단 상태 탭 (빈차/주행/할증/예약/호출) */
+  .status-bar {
+    width: 100%;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .status-pill {
+    float: left;
+    width: 18.4%;
+    margin-right: 2%;
+    text-align: center;
+    padding: 6px 0;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 4px;
+    background-color: #161b22;
+    color: #475569;
+    border: 1px solid #212832;
+    cursor: pointer;
+  }
+  .status-pill:last-child {
+    margin-right: 0;
+  }
+  .status-pill.active-vacant {
+    background-color: #dc2626;
+    color: #ffffff;
+    border-color: #ef4444;
+  }
+  .status-pill.active-driving {
+    background-color: #22c55e;
+    color: #052e16;
+    border-color: #4ade80;
+  }
+  .status-pill.active-surcharge {
+    background-color: #f59e0b;
+    color: #1c1917;
+    border-color: #fbbf24;
+  }
+  .status-pill.active-etc {
+    background-color: #3b82f6;
+    color: #ffffff;
+    border-color: #60a5fa;
+  }
+
+  /* 메인 요금 디스플레이 박스 */
+  .meter-box {
+    background-color: #07090c;
+    border: 1px solid #262e3a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .meter-label-row {
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .meter-label {
+    float: left;
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: bold;
+  }
+  .surcharge-tag {
+    float: right;
+    font-size: 12px;
+    color: #fbbf24;
+    font-weight: bold;
+  }
+  .fare-display-row {
+    display: table;
+    width: 100%;
+    margin: 4px 0;
+  }
+  .horse-wrap {
+    display: table-cell;
+    width: 170px;
+    vertical-align: middle;
+  }
+  #horseCanvas {
+    display: block;
+    background-color: #0a0d12;
+    border: 1px solid #18202c;
+    border-radius: 4px;
+  }
+  .fare-digits-wrap {
+    display: table-cell;
+    vertical-align: bottom;
+    text-align: right;
+  }
+  .unit-won {
+    font-size: 22px;
+    font-weight: bold;
+    color: #cbd5e1;
+    margin-left: 6px;
+    vertical-align: bottom;
+  }
+  .next-tick-row {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 6px;
+  }
+  .next-tick-val {
+    color: #e2e8f0;
+    font-weight: bold;
+  }
+
+  /* 7-세그먼트 LED 스타일 */
+  .seg-digit {
+    display: inline-block;
+    position: relative;
+    vertical-align: bottom;
+  }
+  .seg-bar {
+    position: absolute;
+    background-color: #171c24;
+    border-radius: 2px;
+  }
+  .seg-bar.on {
+    background-color: #f8fafc;
+    box-shadow: 0 0 6px rgba(248, 250, 252, 0.55);
+  }
+  .seg-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: #f8fafc;
+    border-radius: 50%;
+    margin: 0 3px 4px 3px;
+    box-shadow: 0 0 5px rgba(248, 250, 252, 0.5);
+  }
+  .seg-colon {
+    display: inline-block;
+    width: 8px;
+    height: 36px;
+    position: relative;
+    margin: 0 2px;
+    vertical-align: bottom;
+  }
+  .seg-colon-top, .seg-colon-bot {
+    position: absolute;
+    left: 2px;
+    width: 4px;
+    height: 4px;
+    background-color: #f8fafc;
+    border-radius: 50%;
+  }
+  .seg-colon-top { top: 10px; }
+  .seg-colon-bot { bottom: 10px; }
+
+  /* 주행 거리 / 주행 시간 / 저속 시간 행 */
+  .sub-metrics {
+    display: table;
+    width: 100%;
+    background-color: #07090c;
+    border: 1px solid #262e3a;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .metric-col {
+    display: table-cell;
+    width: 33.33%;
+    text-align: center;
+    border-right: 1px solid #1b222c;
+  }
+  .metric-col:last-child {
+    border-right: none;
+  }
+  .metric-title {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+
+  /* 하단 운행 버튼 및 요금 안내 */
+  .bottom-controls {
+    display: table;
+    width: 100%;
+  }
+  .btn-cell {
+    display: table-cell;
+    width: 46%;
+    vertical-align: middle;
+  }
+  #mainActionBtn {
+    width: 100%;
+    padding: 14px 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #ffffff;
+    background-color: #16a34a;
+  }
+  #mainActionBtn.running {
+    background-color: #b91c1c;
+  }
+  .btn-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #fca5a5;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .tariff-info {
+    display: table-cell;
+    width: 54%;
+    vertical-align: middle;
+    padding-left: 16px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #94a3b8;
+  }
+  .tariff-info strong {
+    color: #e2e8f0;
+  }
+
+  /* 우측 패널: 주행 모드 제어 & 영수증 출력기 */
+  .side-card {
+    background-color: #11151c;
+    border: 1px solid #222934;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .side-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .mode-btn-group {
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .mode-btn {
+    float: left;
+    width: 48%;
+    padding: 7px 0;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid #2d3748;
+    background-color: #1a202c;
+    color: #94a3b8;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .mode-btn:first-child {
+    margin-right: 4%;
+  }
+  .mode-btn.selected {
+    background-color: #0284c7;
+    color: #ffffff;
+    border-color: #38bdf8;
+  }
+  .surcharge-btn-group {
+    overflow: hidden;
+  }
+  .sc-btn {
+    float: left;
+    width: 23.5%;
+    margin-right: 2%;
+    padding: 6px 0;
+    font-size: 11px;
+    font-weight: bold;
+    border: 1px solid #2d3748;
+    background-color: #1a202c;
+    color: #94a3b8;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .sc-btn:last-child {
+    margin-right: 0;
+  }
+  .sc-btn.selected {
+    background-color: #d97706;
+    color: #ffffff;
+    border-color: #fbbf24;
+  }
+
+  /* 영수증 출력부 (사진 우측 하단 디자인 재현) */
+  .receipt-box {
+    background-color: #11151c;
+    border: 1px solid #222934;
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .printer-slot {
+    width: 86%;
+    height: 8px;
+    margin: 6px auto 10px auto;
+    background-color: #050709;
+    border: 1px solid #2d3748;
+    border-radius: 4px;
+  }
+  .receipt-paper {
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-family: monospace;
+    font-size: 12px;
+    text-align: left;
+    padding: 10px;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    line-height: 1.45;
+    display: none;
+  }
+  .receipt-placeholder {
+    font-size: 12px;
+    color: #64748b;
+    padding: 26px 0;
+  }
+  .printer-circles {
+    margin: 8px 0;
+  }
+  .p-circle {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #334155;
+    background-color: #0b0e14;
+    margin: 0 14px;
+  }
+  .reset-btn {
+    width: 100%;
+    padding: 7px 0;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- 상단 헤더 -->
+  <div id="topbar">
+    <div id="topbar-inner">
+      <div class="brand-title">
+        <span class="brand-slash">//</span>KOREA DIGITAL TAXIMETER
+        <span class="brand-sub">서울 · 세종 요금 기준</span>
+      </div>
+      <div class="top-right">
+        <span id="speedBadge" class="top-badge">0 km/h</span>
+        <span id="clockText" class="top-clock">00:00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 좌우 분할 화면 -->
+  <div id="main-row">
+    <div id="main-cell">
+      <div id="workspace">
+        <!-- 좌측: 미터기 본체 -->
+        <div id="left-panel">
+          <div class="status-bar">
+            <div id="st-vacant" class="status-pill active-vacant" onclick="setStatus('vacant')">빈차</div>
+            <div id="st-driving" class="status-pill" onclick="setStatus('driving')">주행</div>
+            <div id="st-surcharge" class="status-pill" onclick="toggleManualSurcharge()">할증</div>
+            <div id="st-reserved" class="status-pill" onclick="setStatus('reserved')">예약</div>
+            <div id="st-call" class="status-pill" onclick="setStatus('call')">호출</div>
+          </div>
+
+          <div class="meter-box">
+            <div class="meter-label-row">
+              <span id="meterStateLabel" class="meter-label">요금 · 빈차 대기</span>
+              <span id="surchargeText" class="surcharge-tag">일반요금 (할증없음)</span>
+            </div>
+            <div class="fare-display-row">
+              <div class="horse-wrap">
+                <canvas id="horseCanvas" width="160" height="96"></canvas>
+              </div>
+              <div class="fare-digits-wrap">
+                <span id="fareDisplay"></span><span class="unit-won">원</span>
+              </div>
+            </div>
+            <div class="next-tick-row">
+              다음 100원까지 <span id="remainDistText" class="next-tick-val">1600 m</span>
+            </div>
+          </div>
+
+          <div class="sub-metrics">
+            <div class="metric-col">
+              <div class="metric-title">주행 거리 km</div>
+              <div id="distDisplay"></div>
+            </div>
+            <div class="metric-col">
+              <div class="metric-title">주행 시간</div>
+              <div id="timeDisplay"></div>
+            </div>
+            <div class="metric-col">
+              <div class="metric-title">저속 시간</div>
+              <div id="lowTimeDisplay"></div>
+            </div>
+          </div>
+
+          <div class="bottom-controls">
+            <div class="btn-cell">
+              <button id="mainActionBtn" onclick="toggleTrip()">주행 시작</button>
+            </div>
+            <div class="tariff-info">
+              <strong id="baseTariffDesc">기본 4,800원 (1.6 km)</strong><br>
+              심야 22~04시 최대 40% · 시계외 20%
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 제어 및 영수증 출력기 -->
+        <div id="right-panel">
+          <div class="side-card">
+            <div class="side-title">주행 센서 모드</div>
+            <div class="mode-btn-group">
+              <button id="btnModeGps" class="mode-btn selected" onclick="setSensorMode('gps')">GPS 실주행</button>
+              <button id="btnModeSim" class="mode-btn" onclick="setSensorMode('sim')">시뮬레이션</button>
+            </div>
+            <div class="side-title" style="margin-top:6px;">할증 설정 (20% / 40%)</div>
+            <div class="surcharge-btn-group">
+              <button id="sc-auto" class="sc-btn selected" onclick="setSurchargeMode('auto')">자동</button>
+              <button id="sc-0" class="sc-btn" onclick="setSurchargeMode('0')">해제</button>
+              <button id="sc-20" class="sc-btn" onclick="setSurchargeMode('20')">20%</button>
+              <button id="sc-40" class="sc-btn" onclick="setSurchargeMode('40')">40%</button>
+            </div>
+          </div>
+
+          <div class="receipt-box">
+            <div class="side-title" style="margin-bottom:2px;">TAXIMETER RECEIPT</div>
+            <div class="printer-slot"></div>
+            <div id="receiptPaper" class="receipt-paper"></div>
+            <div id="receiptEmpty" class="receipt-placeholder">
+              <div class="printer-circles">
+                <span class="p-circle"></span>
+                <span class="p-circle"></span>
+              </div>
+              운행을 마치면 영수증이 나옵니다
+            </div>
+            <button class="reset-btn" onclick="resetMeter()">미터기 초기화 (빈차)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Android 4.4.2 (Chromium 30) 완벽 호환을 위해 ES5 문법만 사용합니다.
+(function() {
+  // 1. 도트 매트릭스 달리는 백마 애니메이션 프레임 (20x12 도트 그리드)
+  var horseFrames = [
+    [
+      "00000000000000111000",
+      "00000000000001111100",
+      "00000000000011110110",
+      "11000000111111110000",
+      "01111111111111100000",
+      "00111111111111000000",
+      "00011111111111110000",
+      "00110111111100111000",
+      "01100011001100001100",
+      "11000010000110000110",
+      "10000000000011000000",
+      "00000000000000000000"
+    ],
+    [
+      "00000000000000111000",
+      "00000000000001111100",
+      "00000000000011110110",
+      "01100000111111110000",
+      "00111111111111100000",
+      "00011111111111000000",
+      "00001111111111100000",
+      "00011011111101100000",
+      "00110001101100110000",
+      "00100000100100010000",
+      "00000000000000000000",
+      "00000000000000000000"
+    ],
+    [
+      "00000000000001110000",
+      "00000000000011111000",
+      "00000000000111101100",
+      "11000001111111100000",
+      "01111111111111000000",
+      "00111111111110000000",
+      "00011111111111000000",
+      "00110011111101100000",
+      "01100001100110110000",
+      "01000001000010011000",
+      "00000011000000001000",
+      "00000000000000000000"
+    ],
+    [
+      "00000000000000111000",
+      "00000000000001111100",
+      "00000000000011110110",
+      "01100000111111110000",
+      "00111111111111100000",
+      "00011111111111000000",
+      "00011111111111100000",
+      "00110011111100110000",
+      "01100001101100011000",
+      "11000000100110000000",
+      "00000000000010000000",
+      "00000000000000000000"
+    ]
+  ];
+
+  var canvas = document.getElementById('horseCanvas');
+  var ctx = canvas.getContext('2d');
+  var frameIdx = 0;
+
+  function drawHorse(frame) {
+    ctx.fillStyle = '#090c10';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    var cols = 20;
+    var rows = 12;
+    var cellW = canvas.width / cols;
+    var cellH = canvas.height / rows;
+    var grid = horseFrames[frame];
+
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var isOn = grid[r].charAt(c) === '1';
+        ctx.fillStyle = isOn ? '#f1f5f9' : '#151b24';
+        ctx.beginPath();
+        ctx.arc(c * cellW + cellW / 2, r * cellH + cellH / 2, 2.6, 0, Math.PI * 2, false);
+        ctx.fill();
+      }
+    }
+  }
+
+  // 2. 7-세그먼트 숫자 렌더러 (외부 폰트 없이 오프라인 완벽 동작)
+  var segMap = {
+    '0': [1,1,1,1,1,1,0],
+    '1': [0,1,1,0,0,0,0],
+    '2': [1,1,0,1,1,0,1],
+    '3': [1,1,1,1,0,0,1],
+    '4': [0,1,1,0,0,1,1],
+    '5': [1,0,1,1,0,1,1],
+    '6': [1,0,1,1,1,1,1],
+    '7': [1,1,1,0,0,0,0],
+    '8': [1,1,1,1,1,1,1],
+    '9': [1,1,1,1,0,1,1],
+    ' ': [0,0,0,0,0,0,0]
+  };
+
+  function createDigitHTML(ch, w, h, thick) {
+    var s = segMap[ch] || segMap[' '];
+    var halfH = Math.floor(h / 2);
+    var innerW = w - thick * 2;
+    var segH = halfH - Math.floor(thick * 1.5);
+
+    var html = '<span class="seg-digit" style="width:' + w + 'px;height:' + h + 'px;margin-left:5px;">';
+    // a (상단)
+    html += '<span class="seg-bar' + (s[0] ? ' on' : '') + '" style="top:0;left:' + thick + 'px;width:' + innerW + 'px;height:' + thick + 'px;"></span>';
+    // b (우상)
+    html += '<span class="seg-bar' + (s[1] ? ' on' : '') + '" style="top:' + thick + 'px;right:0;width:' + thick + 'px;height:' + segH + 'px;"></span>';
+    // c (우하)
+    html += '<span class="seg-bar' + (s[2] ? ' on' : '') + '" style="bottom:' + thick + 'px;right:0;width:' + thick + 'px;height:' + segH + 'px;"></span>';
+    // d (하단)
+    html += '<span class="seg-bar' + (s[3] ? ' on' : '') + '" style="bottom:0;left:' + thick + 'px;width:' + innerW + 'px;height:' + thick + 'px;"></span>';
+    // e (좌하)
+    html += '<span class="seg-bar' + (s[4] ? ' on' : '') + '" style="bottom:' + thick + 'px;left:0;width:' + thick + 'px;height:' + segH + 'px;"></span>';
+    // f (좌상)
+    html += '<span class="seg-bar' + (s[5] ? ' on' : '') + '" style="top:' + thick + 'px;left:0;width:' + thick + 'px;height:' + segH + 'px;"></span>';
+    // g (중앙)
+    html += '<span class="seg-bar' + (s[6] ? ' on' : '') + '" style="top:' + (halfH - Math.floor(thick/2)) + 'px;left:' + thick + 'px;width:' + innerW + 'px;height:' + thick + 'px;"></span>';
+    html += '</span>';
+    return html;
+  }
+
+  function renderSegmentedNumber(elId, str, w, h, thick) {
+    var out = '';
+    for (var i = 0; i < str.length; i++) {
+      var ch = str.charAt(i);
+      if (ch === '.') {
+        out += '<span class="seg-dot"></span>';
+      } else if (ch === ':') {
+        out += '<span class="seg-colon" style="height:' + h + 'px;"><span class="seg-colon-top"></span><span class="seg-colon-bot"></span></span>';
+      } else {
+        out += createDigitHTML(ch, w, h, thick);
+      }
+    }
+    document.getElementById(elId).innerHTML = out;
+  }
+
+  // 3. 미터기 상태 및 서울/세종 병산제 요금 계산 변수
+  var isRunning = false;
+  var currentStatus = 'vacant'; // vacant, driving, reserved, call
+  var sensorMode = 'gps';       // gps, sim
+  var surchargeMode = 'auto';   // auto, 0, 20, 40
+
+  var distanceMeters = 0;       // 실제 주행 거리 (m)
+  var equivMeters = 0;          // 거리 + 저속시간 병산 환산 거리 (m)
+  var elapsedSec = 0;           // 총 주행 시간 (초)
+  var lowSpeedSec = 0;          // 저속(15.72km/h 미만) 시간 (초)
+  var currentSpeedKmh = 0;      // 현재 속도 (km/h)
+  var startTimeStr = '';
+
+  var watchId = null;
+  var lastLat = null;
+  var lastLon = null;
+
+  // 서울 택시 표준 요금 상수
+  var BASE_DIST_M = 1600;       // 기본거리 1.6km
+  var UNIT_DIST_M = 131;        // 거리단위 131m
+  var LOW_SPEED_LIMIT = 15.72;  // 시간·거리 동시병산 기준 속도 (131m / 30초)
+
+  function getActiveSurchargeRate() {
+    if (surchargeMode === '0') return 0;
+    if (surchargeMode === '20') return 20;
+    if (surchargeMode === '40') return 40;
+    // 자동: 서울 심야할증 시간대 (22~23시: 20%, 23~02시: 40%, 02~04시: 20%)
+    var hr = new Date().getHours();
+    if (hr >= 23 || hr < 2) return 40;
+    if (hr === 22 || (hr >= 2 && hr < 4)) return 20;
+    return 0;
+  }
+
+  function getTariffValues() {
+    var rate = getActiveSurchargeRate();
+    if (rate === 40) {
+      return { base: 6700, unit: 140, rate: 40 };
+    } else if (rate === 20) {
+      return { base: 5800, unit: 120, rate: 20 };
+    }
+    return { base: 4800, unit: 100, rate: 0 };
+  }
+
+  function calculateFare() {
+    var t = getTariffValues();
+    if (!isRunning && distanceMeters === 0 && elapsedSec === 0) {
+      return { fare: t.base, remain: BASE_DIST_M, tariff: t };
+    }
+    if (equivMeters <= BASE_DIST_M) {
+      return {
+        fare: t.base,
+        remain: Math.max(1, Math.ceil(BASE_DIST_M - equivMeters)),
+        tariff: t
+      };
+    }
+    var extra = equivMeters - BASE_DIST_M;
+    var ticks = Math.floor(extra / UNIT_DIST_M) + 1;
+    var remain = Math.max(1, Math.ceil(UNIT_DIST_M - (extra % UNIT_DIST_M)));
+    return {
+      fare: t.base + (ticks * t.unit),
+      remain: remain,
+      tariff: t
+    };
+  }
+
+  function pad2(n) {
+    return n < 10 ? '0' + n : '' + n;
+  }
+
+  function formatMMSS(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return pad2(m) + ':' + pad2(s);
+  }
+
+  function padLeftSpace(str, len) {
+    while (str.length < len) {
+      str = ' ' + str;
+    }
+    return str;
+  }
+
+  function updateUI() {
+    var res = calculateFare();
+    var fareStr = padLeftSpace('' + res.fare, 6);
+    renderSegmentedNumber('fareDisplay', fareStr, 36, 66, 6);
+
+    var kmStr = (distanceMeters / 1000).toFixed(2);
+    if (kmStr.length < 5) kmStr = ' ' + kmStr;
+    renderSegmentedNumber('distDisplay', kmStr, 18, 34, 3);
+    renderSegmentedNumber('timeDisplay', formatMMSS(elapsedSec), 18, 34, 3);
+    renderSegmentedNumber('lowTimeDisplay', formatMMSS(lowSpeedSec), 18, 34, 3);
+
+    document.getElementById('remainDistText').innerHTML = res.remain + ' m';
+    document.getElementById('speedBadge').innerHTML = Math.round(currentSpeedKmh) + ' km/h (' + (sensorMode === 'gps' ? 'GPS' : 'SIM') + ')';
+    document.getElementById('baseTariffDesc').innerHTML = '기본 ' + res.tariff.base.toLocaleString() + '원 (1.6 km)';
+
+    var scText = document.getElementById('surchargeText');
+    var stSurchargePill = document.getElementById('st-surcharge');
+    if (res.tariff.rate > 0) {
+      scText.innerHTML = '할증 적용중 (+' + res.tariff.rate + '%)';
+      stSurchargePill.className = 'status-pill active-surcharge';
+    } else {
+      scText.innerHTML = '일반요금 (할증없음)';
+      stSurchargePill.className = 'status-pill';
+    }
+  }
+
+  // 4. Haversine GPS 거리 계산
+  function calcDistanceM(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function startGpsWatch() {
+    if (!navigator.geolocation) return;
+    lastLat = null;
+    lastLon = null;
+    watchId = navigator.geolocation.watchPosition(function(pos) {
+      if (!isRunning || sensorMode !== 'gps') return;
+      var lat = pos.coords.latitude;
+      var lon = pos.coords.longitude;
+      var acc = pos.coords.accuracy || 20;
+      if (acc > 60) return; // 오차 큰 신호 무시
+
+      if (pos.coords.speed !== null && pos.coords.speed >= 0) {
+        currentSpeedKmh = pos.coords.speed * 3.6;
+      }
+
+      if (lastLat !== null && lastLon !== null) {
+        var d = calcDistanceM(lastLat, lastLon, lat, lon);
+        if (d >= 2 && d < 200) {
+          distanceMeters += d;
+          equivMeters += d;
+        }
+      }
+      lastLat = lat;
+      lastLon = lon;
+    }, function() {}, {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 5000
+    });
+  }
+
+  function stopGpsWatch() {
+    if (watchId !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+  }
+
+  // 5. 주기적 타이머 (시계, 주행 시간, 시뮬레이션, 말 애니메이션)
+  setInterval(function() {
+    var now = new Date();
+    document.getElementById('clockText').innerHTML = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+
+    if (isRunning) {
+      elapsedSec += 1;
+
+      if (sensorMode === 'sim') {
+        // 시뮬레이션: 시내 주행 패턴 (40~55km/h 주행 및 신호대기 저속 반복)
+        var cycle = elapsedSec % 25;
+        if (cycle < 18) {
+          currentSpeedKmh = 42 + (elapsedSec % 11);
+          var stepM = currentSpeedKmh / 3.6;
+          distanceMeters += stepM;
+          equivMeters += stepM;
+        } else {
+          currentSpeedKmh = 0; // 신호 대기
+        }
+      }
+
+      // 저속/정차 시간 병산 (15.72km/h 미만 시 1초당 131/30 m 환산)
+      if (currentSpeedKmh < LOW_SPEED_LIMIT) {
+        lowSpeedSec += 1;
+        equivMeters += (UNIT_DIST_M / 30);
+      }
+    } else {
+      currentSpeedKmh = 0;
+    }
+
+    updateUI();
+  }, 1000);
+
+  // 도트 백마 달리기 애니메이션 루프
+  setInterval(function() {
+    if (isRunning) {
+      frameIdx = (frameIdx + 1) % 4;
+      drawHorse(frameIdx);
+    }
+  }, 140);
+
+  // 6. 사용자 조작 핸들러 (전역 노출)
+  window.setStatus = function(st) {
+    currentStatus = st;
+    document.getElementById('st-vacant').className = 'status-pill' + (st === 'vacant' ? ' active-vacant' : '');
+    document.getElementById('st-driving').className = 'status-pill' + (st === 'driving' ? ' active-driving' : '');
+    document.getElementById('st-reserved').className = 'status-pill' + (st === 'reserved' ? ' active-etc' : '');
+    document.getElementById('st-call').className = 'status-pill' + (st === 'call' ? ' active-etc' : '');
+
+    var labelMap = {
+      vacant: '요금 · 빈차 대기',
+      driving: '요금 · 주행',
+      reserved: '요금 · 예약 대기',
+      call: '요금 · 호출 이동'
+    };
+    document.getElementById('meterStateLabel').innerHTML = labelMap[st] || '요금 · 주행';
+  };
+
+  window.setSensorMode = function(mode) {
+    sensorMode = mode;
+    document.getElementById('btnModeGps').className = 'mode-btn' + (mode === 'gps' ? ' selected' : '');
+    document.getElementById('btnModeSim').className = 'mode-btn' + (mode === 'sim' ? ' selected' : '');
+    if (isRunning) {
+      if (mode === 'gps') startGpsWatch();
+      else stopGpsWatch();
+    }
+    updateUI();
+  };
+
+  window.setSurchargeMode = function(mode) {
+    surchargeMode = mode;
+    var ids = ['auto', '0', '20', '40'];
+    for (var i = 0; i < ids.length; i++) {
+      document.getElementById('sc-' + ids[i]).className = 'sc-btn' + (ids[i] === mode ? ' selected' : '');
+    }
+    updateUI();
+  };
+
+  window.toggleManualSurcharge = function() {
+    if (surchargeMode === '20') setSurchargeMode('40');
+    else if (surchargeMode === '40') setSurchargeMode('0');
+    else setSurchargeMode('20');
+  };
+
+  window.toggleTrip = function() {
+    var btn = document.getElementById('mainActionBtn');
+    if (!isRunning) {
+      // 주행 시작
+      distanceMeters = 0;
+      equivMeters = 0;
+      elapsedSec = 0;
+      lowSpeedSec = 0;
+      isRunning = true;
+
+      var now = new Date();
+      startTimeStr = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+
+      document.getElementById('receiptPaper').style.display = 'none';
+      document.getElementById('receiptEmpty').style.display = 'block';
+
+      setStatus('driving');
+      btn.className = 'running';
+      btn.innerHTML = '<span class="btn-dot"></span>운행 종료';
+
+      if (sensorMode === 'gps') startGpsWatch();
+    } else {
+      // 운행 종료 및 영수증 발행
+      isRunning = false;
+      stopGpsWatch();
+      setStatus('vacant');
+      btn.className = '';
+      btn.innerHTML = '주행 시작';
+
+      var res = calculateFare();
+      var nowEnd = new Date();
+      var endTimeStr = pad2(nowEnd.getHours()) + ':' + pad2(nowEnd.getMinutes());
+
+      var rHtml = '';
+      rHtml += '<strong>[택시 요금 영수증]</strong><br>';
+      rHtml += '------------------------<br>';
+      rHtml += '승차시각 : ' + startTimeStr + '<br>';
+      rHtml += '하차시각 : ' + endTimeStr + '<br>';
+      rHtml += '주행거리 : ' + (distanceMeters / 1000).toFixed(2) + ' km<br>';
+      rHtml += '주행시간 : ' + formatMMSS(elapsedSec) + '<br>';
+      rHtml += '할증적용 : ' + (res.tariff.rate > 0 ? '+' + res.tariff.rate + '%' : '없음') + '<br>';
+      rHtml += '------------------------<br>';
+      rHtml += '<strong>결제금액 : ' + res.fare.toLocaleString() + ' 원</strong><br>';
+      rHtml += '이용해 주셔서 감사합니다.';
+
+      document.getElementById('receiptEmpty').style.display = 'none';
+      var paper = document.getElementById('receiptPaper');
+      paper.innerHTML = rHtml;
+      paper.style.display = 'block';
+    }
+    updateUI();
+  };
+
+  window.resetMeter = function() {
+    isRunning = false;
+    stopGpsWatch();
+    distanceMeters = 0;
+    equivMeters = 0;
+    elapsedSec = 0;
+    lowSpeedSec = 0;
+    currentSpeedKmh = 0;
+    setStatus('vacant');
+
+    var btn = document.getElementById('mainActionBtn');
+    btn.className = '';
+    btn.innerHTML = '주행 시작';
+
+    document.getElementById('receiptPaper').style.display = 'none';
+    document.getElementById('receiptEmpty').style.display = 'block';
+    drawHorse(0);
+    updateUI();
+  };
+
+  // 초기 렌더링
+  drawHorse(0);
+  updateUI();
+})();
+</script>
+</body>
+</html>
